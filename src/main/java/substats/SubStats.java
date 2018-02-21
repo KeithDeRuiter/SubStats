@@ -7,6 +7,10 @@ package substats;
 
 
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
@@ -15,7 +19,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
-import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 
 
@@ -25,13 +28,33 @@ import javax.swing.SwingUtilities;
  */
 public class SubStats extends Application {
     
+    public static final Logger LOGGER = Logger.getLogger(SubStats.class.getName());
+    
     DataGatherer dataGatherer;
+    WebSocketClientEndpoint controlSocket;
     
     @Override
     public void init() {
         //Set up data query connection
-        dataGatherer = new DataGatherer();
+        URI frequencyLocation;
+        try {
+            frequencyLocation = new URI("http://localhost:4567/frequencies");
+        } catch (URISyntaxException ex) {
+            LOGGER.log(Level.SEVERE, "Error parsing frequency URI", ex);
+            return;
+        }
+        dataGatherer = new DataGatherer(frequencyLocation);
         dataGatherer.setupClient();
+        
+        //Set up websocket for control
+        URI controlUri;
+        try {
+            controlUri = new URI("ws://localhost:4567/controls");
+        } catch (URISyntaxException ex) {
+            LOGGER.log(Level.SEVERE, "Error parsing control URI", ex);
+            return;
+        }
+        controlSocket = new WebSocketClientEndpoint(controlUri);
     }
     
     @Override
@@ -67,7 +90,9 @@ public class SubStats extends Application {
         //Query Button
         Button queryButton = new Button("Query");
         queryButton.setOnAction((event) -> {
-            PlatformData data = dataGatherer.getPlatformData(nameTextField.getText());
+            String name = nameTextField.getText();
+            controlSocket.sendMessage("Querying for: " + name);
+            PlatformData data = dataGatherer.getPlatformData(name);
             vis.clearAllBands();
             for (Integer b : data.getFrequencies()) {
                 vis.addTargetBand(new FrequencyBand(b, 3, 100));

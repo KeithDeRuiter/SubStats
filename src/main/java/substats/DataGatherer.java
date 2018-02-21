@@ -8,6 +8,7 @@ package substats;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import java.net.URI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+
 /**
  *
  * @author Keith
@@ -28,10 +30,12 @@ public class DataGatherer {
     Client client;
     WebTarget freqWebTarget;
     Gson gson;
-
+    URI frequencyUri;
     
-    public DataGatherer() {
+    
+    public DataGatherer(URI uri) {
         gson = new Gson();
+        frequencyUri = uri;
     }
     
     
@@ -40,7 +44,7 @@ public class DataGatherer {
         client = ClientBuilder.newClient();
         
         //Create WebTarget for the service to query
-        freqWebTarget = client.target("http://localhost:4567/frequencies");
+        freqWebTarget = client.target(frequencyUri);
     }
     
     public PlatformData getPlatformData(String name) {
